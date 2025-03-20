@@ -1,69 +1,43 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Product } from "../types";
+import { useActionState } from "react";
+import type { ProductEditData } from "../types/product";
 
 interface FormProductProps {
-  product?: Product;
-  onSubmit: (product: Omit<Product, "id">) => Promise<void>;
-  isSubmitting?: boolean;
+  product?: ProductEditData;
+  onSubmit: (product: ProductEditData) => Promise<void>; 
   submitButtonText?: string;
 }
 
 export default function FormProduct({
   product,
   onSubmit,
-  isSubmitting = false,
   submitButtonText = "Save Product",
 }: FormProductProps) {
-  const [formData, setFormData] = useState<Omit<Product, "id">>({
-    name: "",
-    price: 0,
-    description: "",
-  });
 
-  // If product is provided (edit mode), populate the form
-  useEffect(() => {
-    if (product) {
-      setFormData({
-        name: product.name,
-        price: product.price,
-        description: product.description,
-      });
-    }
-  }, [product]);
+  const [error, submitProduct, isPending] = useActionState<string | null, FormData>(
+    async (previousState, formData) => {
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === "price" ? parseFloat(value) || 0 : value,
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    try {
-      await onSubmit(formData);
-      
-      // If this is a create form (no product prop), reset the form
-      if (!product) {
-        setFormData({
-          name: "",
-          price: 0,
-          description: "",
+      try {
+        await onSubmit({
+          name: (formData.get('name') as string) ?? '',
+          price: parseFloat(formData.get('price') !== "" ? formData.get('price') as string : '0'),
+          description: (formData.get('description') as string) ?? '',
         });
+        return null;
+      } catch {
+        return "Failed to create product. Please try again.";
       }
-    } catch (error) {
-      console.error("Error submitting form:", error);
-    }
-  };
+    },
+    null,
+  );
+
+  if(error) {
+    return <div className="text-red-500">{error}</div>;
+  }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-gray-800 p-6 rounded-lg shadow-md">
+    <form action={submitProduct} className="bg-gray-800 p-6 rounded-lg shadow-md">
       <div className="mb-4">
         <label htmlFor="name" className="block text-purple-300 mb-2">
           Product Name
@@ -72,8 +46,7 @@ export default function FormProduct({
           type="text"
           id="name"
           name="name"
-          value={formData.name}
-          onChange={handleChange}
+          defaultValue={product?.name || ''}
           className={`w-full p-2 bg-gray-700 border rounded-md text-white border-gray-600`}
         />
       </div>
@@ -86,10 +59,9 @@ export default function FormProduct({
           type="number"
           id="price"
           name="price"
-          value={formData.price}
-          onChange={handleChange}
           step="0.01"
           min="0"
+          defaultValue={product?.price.toString() || 0}
           className={`w-full p-2 bg-gray-700 border rounded-md text-white border-gray-600`}
         />
       </div>
@@ -101,19 +73,18 @@ export default function FormProduct({
         <textarea
           id="description"
           name="description"
-          value={formData.description}
-          onChange={handleChange}
           rows={4}
+          defaultValue={product?.description || ''}
           className={`w-full p-2 bg-gray-700 border rounded-md text-white border-gray-600`}
         />
       </div>
 
       <button
         type="submit"
-        disabled={isSubmitting}
+        disabled={isPending}
         className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md transition-colors disabled:bg-purple-800 disabled:cursor-not-allowed"
       >
-        {isSubmitting ? "Submitting..." : submitButtonText}
+        {isPending ? "Submitting..." : submitButtonText}
       </button>
     </form>
   );
