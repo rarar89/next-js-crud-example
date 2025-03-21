@@ -1,26 +1,26 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import FormProduct from "../../_components/FormProduct";
 import { fetcher, updateProduct } from "../../util/api";
 import Link from "next/link";
-import useSWR from "swr";
+import useSWR, { mutate } from "swr";
 import { Product, ProductEditData } from "@/app/types/product";
 
 export default function EditProductPage() {
   const { id } = useParams();
-  
-  const { data, error: fetchError, isLoading } = useSWR<Product>(
+  const router = useRouter();
+
+  const { data, error: fetchError, mutate: mutateProduct, isLoading } = useSWR<Product>(
     id ? `products/${id}` : null,
     fetcher
   );
 
   const editProductHanlder = async (productData: ProductEditData) => {
     await updateProduct(parseInt(id as string), productData);
-  }
-
-  if (isLoading) {
-    return <div className="text-white">Loading product data...</div>;
+    mutateProduct();
+    mutate("products");
+    router.push("/");
   }
 
   if (fetchError || !id) {
@@ -39,7 +39,9 @@ export default function EditProductPage() {
             Back to Products
           </Link>
         </div>
-        
+        {isLoading && (
+          <div className="w-full max-w-md h-80 bg-gray-700 rounded-lg animate-pulse"></div>
+        )}
         {data && (
           <FormProduct 
             product={data}

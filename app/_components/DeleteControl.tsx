@@ -4,7 +4,7 @@ import { mutate } from "swr";
 
 const DeleteControl = ({ productId }: { productId: number }) => {
 
-  const [deleteError, performDelete, isDeletingProduct] = useActionState(
+  const [deleteError, performDelete, isDeletingProduct] = useActionState<string | null, number>(
     async (previousState: string | null, id: number) => {
       
       try {

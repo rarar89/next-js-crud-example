@@ -5,12 +5,14 @@ import FormProduct from "../_components/FormProduct";
 import { createProduct } from "../util/api";
 import Link from "next/link";
 import type { ProductEditData } from "../types/product";
+import { mutate } from "swr";
 
 export default function NewProductPage() {
   const router = useRouter();
   
   const createProductHandler = async (product: ProductEditData) => {
     await createProduct(product);
+    mutate("products");
     router.push("/");
   }
 

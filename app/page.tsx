@@ -16,10 +16,6 @@ export default function Home() {
   // Derived products from the data
   const products: Product[] = data?.data || [];
 
-  if (isLoading) {
-    return <div className="text-white">Loading...</div>;
-  }
-
   if (error) {
     return <div className="text-red-400">Error: {error.message}</div>;
   }
@@ -32,6 +28,13 @@ export default function Home() {
         <Link href="/create" className="bg-blue-400 hover:bg-blue-600 text-white px-4 py-1 rounded-md mb-4 inline-block">Create Product</Link>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {isLoading && (
+          <>
+            {[...Array(6)].map((_, index) => (
+              <div key={index} className="w-full h-36 bg-gray-700 rounded-lg animate-pulse"></div>
+            ))}
+          </>
+        )}
         {products.map((product) => (
           <div key={product.id} className="bg-gray-800 rounded-lg shadow hover:shadow-lg transition-shadow border-t-4 border-purple-500">
             <div className="p-5">
